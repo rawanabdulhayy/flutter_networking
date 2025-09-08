@@ -11,7 +11,6 @@ class MainPage extends StatelessWidget {
 
   final List<Widget> _pages = const [
     HomeScreen(),
-    DetailScreen(),
   ];
 
   @override
@@ -43,13 +42,14 @@ class MainPage extends StatelessWidget {
               BottomNavigationBarItem(
                 icon: Icon(Icons.person_outline),
                 activeIcon: Icon(Icons.person),
-                label: "Profile",
+                label: "Search",
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.settings_outlined),
                 activeIcon: Icon(Icons.settings),
-                label: "Settings",
+                label: "Coming Soon",
               ),
+
             ],
           ),
 
