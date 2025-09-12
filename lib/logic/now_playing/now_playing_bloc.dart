@@ -7,25 +7,30 @@ import 'now_playing_state.dart';
 
 class NowPlayingBloc extends Bloc<NowPlayingEvent, NowPlayingState> {
   final Dio dio;
-  //super takes the state of the parent widget.
+  // `super(...)` calls the parent Bloc constructor with that state; state of the parent widget.
   NowPlayingBloc(this.dio) : super(NowPlayingInitial()) {
-    on<FetchNowPlayingMovies>((event, emit) async{
+
+    // On <event> -- an event handler for the FetchNowPlayingMovies event.
+    // Whenever this event is dispatched, the provided callback executes.
+    on<FetchNowPlayingMovies>((event, emit) async {
       emit(NowPlayingLoading());
-      try{
-        //request, endpoint path passed in a get/post function through dio's object.
-        //async await block awaits the dio's response.
-        final response = await dio.get("https://api.themoviedb.org/3/movie/now_playing?api_key=87903828b97a85b50c60fb3bbd960c55");
-        if(response.statusCode == 200){
-          //1- a3mel t7wel l from json
+
+      try {
+        // Perform an asynchronous GET request using Dio to fetch "now playing" movies.
+        // The request is awaited so execution pauses until the response is returned.
+        final response = await dio.get(
+            "https://api.themoviedb.org/3/movie/now_playing?api_key=87903828b97a85b50c60fb3bbd960c55"
+        );
+
+        // Check http status code for success or failure.
+        if (response.statusCode == 200) {
+          // Deserialize the raw JSON response into a strongly typed Movies object.
           final movieResponse = Movies.fromJson(response.data);
-          //2- emit the loaded success state, returns the converted json variable
           emit(NowPlayingLoaded(movieResponse));
-        }
-        else{
+        } else {
           emit(NowPlayingError("Failed"));
         }
-      }
-      catch (e){
+      } catch (e) {
         emit(NowPlayingError(e.toString()));
       }
     });
