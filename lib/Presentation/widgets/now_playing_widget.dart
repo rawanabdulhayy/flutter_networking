@@ -1,66 +1,99 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:networking/logic/now_playing/now_playing_bloc.dart';
+import 'package:networking/logic/now_playing/now_playing_state.dart';
 
 class NowPlayingWidget extends StatelessWidget {
   const NowPlayingWidget({super.key});
-  final List<String> moviesImages = const [
-    "https://www.themoviedb.org/t/p/w1280/xbSuFiJbbBWCkyCCKIMfuDCA4yV.jpg",
-    "https://www.themoviedb.org/t/p/w1280/8XfIKOPmuCZLh5ooK13SPKeybWF.jpg",
-    "https://www.themoviedb.org/t/p/w1280/wVYREutTvI2tmxr6ujrHT704wGF.jpg",
-  ];
+  // final List<String> moviesImages = const [
+  //   "https://www.themoviedb.org/t/p/w1280/xbSuFiJbbBWCkyCCKIMfuDCA4yV.jpg",
+  //   "https://www.themoviedb.org/t/p/w1280/8XfIKOPmuCZLh5ooK13SPKeybWF.jpg",
+  //   "https://www.themoviedb.org/t/p/w1280/wVYREutTvI2tmxr6ujrHT704wGF.jpg",
+  // ];
   @override
   Widget build(BuildContext context) {
     //a new widget to a new package; Carousel Slider, takes options and items (a list of items to display using the list.map((item){}))
-    return CarouselSlider(
-      items:
-          moviesImages.map((image) {
-            return Stack(
-              children: [
-                Image.network(
-                  image,
-                  width: double.infinity,
-                  height: double.infinity,
-                  //contain: eltabe3y — it stays true to its original shape, nothing cut off.
-                  //cover: kulaha — container is fully filled, but you might lose edges.
-                  //height and width only fits those w mesh muhem l tani fit
-                  //fill: Force fit — no empty space, no cropping, but shape may look weird.
+    return BlocBuilder<NowPlayingBloc, NowPlayingState>(
+      builder: (context, state) {
+        //handling different states UI.
 
-                // cover → keeps original proportions (aspect ratio) → crops edges if needed.
-                // fill → ignores proportions → stretches/squishes image to fit container.
-                  fit: BoxFit.fill,
-                ),
-                //where the child of the positioned widget should be positioned within the stack relatively.
-                Positioned(
-                  top: 324,
-                  left: 120,
-                  child: Row(
+        //Now Playing Loading State.
+        if (state is NowPlayingLoading) {
+          return Center(child: CircularProgressIndicator());
+        }
+        //Now Playing Loaded State.
+        else if (state is NowPlayingLoaded) {
+          final movies = state.movies.moviesResults;
+
+          return CarouselSlider(
+            //we are sending the movie response along with the state
+            //so we retrieve the data from the state
+            items:
+                movies.map((movie) {
+                  return Stack(
                     children: [
-                      Container(
-                        width: 15,
-                        height: 15,
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
+                      Image.network(
+                        "https://image.tmdb.org/t/p/w500${movie.backdropPath}",
+                        width: double.infinity,
+                        height: double.infinity,
+                        //contain: eltabe3y — it stays true to its original shape, nothing cut off.
+                        //cover: kulaha — container is fully filled, but you might lose edges.
+                        //height and width only fits those w mesh muhem l tani fit
+                        //fill: Force fit — no empty space, no cropping, but shape may look weird.
+
+                        // cover → keeps original proportions (aspect ratio) → crops edges if needed.
+                        // fill → ignores proportions → stretches/squishes image to fit container.
+                        fit: BoxFit.fill,
                       ),
-                      Text(
-                        "NOW PLAYING",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w300,
-                          fontSize: 24,
+                      //where the child of the positioned widget should be positioned within the stack relatively.
+                      Positioned(
+                        top: 324,
+                        left: 120,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 15,
+                              height: 15,
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            Text(
+                              "NOW PLAYING",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w300,
+                                fontSize: 24,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
-                ),
-              ],
-            );
-          }).toList(),
-      options: CarouselOptions(height: 370, autoPlay: true, viewportFraction:1),
+                  );
+                }).toList(),
+            options: CarouselOptions(
+              height: 370,
+              autoPlay: true,
+              viewportFraction: 1,
+            ),
+          );
+        }
+        //Now Playing Error State.
+        else if (state is NowPlayingError) {
+          return Center(
+            child: Text(state.message, style: TextStyle(color: Colors.red)),
+          );
+        } else {
+          return Container();
+        }
+      },
     );
   }
 }
+
 /*
 ===========================
         .map() vs .forEach()

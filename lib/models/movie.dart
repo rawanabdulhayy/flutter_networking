@@ -1,11 +1,11 @@
 class Movies {
-  final List<Movie> movies;
+  final List<Movie> moviesResults;
   
-  Movies({required this.movies});
+  Movies({required this.moviesResults});
 
   factory Movies.fromJson(Map<String, dynamic> json) {
     return Movies(
-      movies: List<Movie>.from(
+      moviesResults: List<Movie>.from(
         (json['results'] ?? []).map(
               (e) => Movie.fromJson(e),
         ),

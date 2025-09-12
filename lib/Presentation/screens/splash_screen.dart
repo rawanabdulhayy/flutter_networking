@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:networking/Presentation/screens/home_screen.dart';
+import 'package:networking/Presentation/screens/main_page.dart';
 import 'package:networking/logic/now_playing/now_playing_event.dart';
 
 import '../../logic/now_playing/now_playing_bloc.dart';
@@ -44,7 +45,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       },
                     ),
                   ],
-                  child: const HomeScreen(),
+                  child: const MainPage(),
                 ),
           ),
         );
