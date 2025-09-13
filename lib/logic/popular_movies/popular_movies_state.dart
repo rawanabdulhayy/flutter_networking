@@ -6,7 +6,7 @@ abstract class PopularMoviesStates extends Equatable {
   @override
   List<Object?> get props => [];
 }
-
+class PopularMoviesInitial extends PopularMoviesStates{}
 class PopularMoviesLoading extends PopularMoviesStates{}
 class PopularMoviesLoaded extends PopularMoviesStates{
   //the state needs to send a parameter so that when it's emitting, this value is returned; movies.
