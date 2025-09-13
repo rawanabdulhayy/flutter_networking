@@ -31,47 +31,55 @@ class NowPlayingWidget extends StatelessWidget {
             //so we retrieve the data from the state
             items:
                 movies.map((movie) {
-                  return Stack(
-                    children: [
-                      Image.network(
-                        "https://image.tmdb.org/t/p/w500${movie.backdropPath}",
-                        width: double.infinity,
-                        height: double.infinity,
-                        //contain: eltabe3y — it stays true to its original shape, nothing cut off.
-                        //cover: kulaha — container is fully filled, but you might lose edges.
-                        //height and width only fits those w mesh muhem l tani fit
-                        //fill: Force fit — no empty space, no cropping, but shape may look weird.
+                  return GestureDetector(
+                    onTap: (){
+                      //hnru7 details screen w hn wrap details screen into a bloc provider
+                      Navigator.push(context, MaterialPageRoute(builder: (_){
 
-                        // cover → keeps original proportions (aspect ratio) → crops edges if needed.
-                        // fill → ignores proportions → stretches/squishes image to fit container.
-                        fit: BoxFit.fill,
-                      ),
-                      //where the child of the positioned widget should be positioned within the stack relatively.
-                      Positioned(
-                        top: 324,
-                        left: 120,
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 15,
-                              height: 15,
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            Text(
-                              "NOW PLAYING",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w300,
-                                fontSize: 24,
-                              ),
-                            ),
-                          ],
+                      }));
+                    },
+                    child: Stack(
+                      children: [
+                        Image.network(
+                          "https://image.tmdb.org/t/p/w500${movie.backdropPath}",
+                          width: double.infinity,
+                          height: double.infinity,
+                          //contain: eltabe3y — it stays true to its original shape, nothing cut off.
+                          //cover: kulaha — container is fully filled, but you might lose edges.
+                          //height and width only fits those w mesh muhem l tani fit
+                          //fill: Force fit — no empty space, no cropping, but shape may look weird.
+
+                          // cover → keeps original proportions (aspect ratio) → crops edges if needed.
+                          // fill → ignores proportions → stretches/squishes image to fit container.
+                          fit: BoxFit.fill,
                         ),
-                      ),
-                    ],
+                        //where the child of the positioned widget should be positioned within the stack relatively.
+                        Positioned(
+                          top: 324,
+                          left: 120,
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 15,
+                                height: 15,
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              Text(
+                                "NOW PLAYING",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w300,
+                                  fontSize: 24,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 }).toList(),
             options: CarouselOptions(
