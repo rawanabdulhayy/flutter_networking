@@ -6,6 +6,8 @@ import 'package:networking/Presentation/screens/main_page.dart';
 import 'package:networking/logic/now_playing/now_playing_event.dart';
 import 'package:networking/logic/popular_movies/popular_movies_bloc.dart';
 import 'package:networking/logic/popular_movies/popular_movies_event.dart';
+import 'package:networking/logic/top_rated/top_rated_bloc.dart';
+import 'package:networking/logic/top_rated/top_rated_event.dart';
 
 import '../../logic/now_playing/now_playing_bloc.dart';
 
@@ -53,6 +55,16 @@ class _SplashScreenState extends State<SplashScreen> {
                         final bloc = PopularMoviesBloc(Dio());
                         //triggering the event handled in the bloc file; to emit such and such.
                         bloc.add(FetchingPopularMovies());
+                        return bloc;
+                      },
+                    ),
+                    //The popular movies bloc.
+                    BlocProvider(
+                      //I don't need to provide a context name since I am not gonna be using it
+                      create: (_) {
+                        final bloc = TopRatedMoviesBloc(Dio());
+                        //triggering the event handled in the bloc file; to emit such and such.
+                        bloc.add(FetchingTopRatedMovies());
                         return bloc;
                       },
                     ),

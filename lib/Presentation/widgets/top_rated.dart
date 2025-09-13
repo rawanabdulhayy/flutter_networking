@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:networking/Presentation/screens/detail_screen.dart';
+import 'package:networking/logic/top_rated/top_rated_bloc.dart';
+import 'package:networking/logic/top_rated/top_rated_state.dart';
 import '../../models/movie.dart';
 
 class TopRated extends StatelessWidget {
@@ -13,7 +16,8 @@ class TopRated extends StatelessWidget {
       id: 1,
       originalLanguage: "en",
       originalTitle: "Dummy Original Title 1",
-      overview: "This is a short overview for movie 1. It's just a dummy description.",
+      overview:
+          "This is a short overview for movie 1. It's just a dummy description.",
       popularity: 123.45,
       posterPath: "/dummy_poster1.jpg",
       releaseDate: "2025-01-01",
@@ -56,39 +60,74 @@ class TopRated extends StatelessWidget {
     ),
   ];
 
-
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20),
-          child: Text("Popular on Netflix", style: TextStyle(fontSize: 27, fontWeight: FontWeight.w700, color: Colors.white),),
-        ),
-        SizedBox(
-          height: 300,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: dummyMovies.length,
-            itemBuilder: (BuildContext context, int index) {
-              final movie = dummyMovies[index];
-              return Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(5),
-                  child: GestureDetector(
-                    child: Image.asset(movie.backdropPath!),
-                    onTap: (){
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => DetailScreen(movie: movie,)));
-                    },
+    return BlocBuilder<TopRatedMoviesBloc, TopRatedMoviesStates>(
+      builder: (context, state) {
+        if (state is TopRatedMoviesLoading) {
+          return Center(child: CircularProgressIndicator());
+        } else if (state is TopRatedMoviesLoaded) {
+          final movies = state.movies.moviesResults;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10.0,
+                  horizontal: 20,
+                ),
+                child: Text(
+                  "Popular on Netflix",
+                  style: TextStyle(
+                    fontSize: 27,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
                   ),
                 ),
-              );
-            },
-          ),
-        ),
-      ],
+              ),
+              SizedBox(
+                height: 300,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: movies.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final movie = movies[index];
+                    return Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(5),
+                        child: GestureDetector(
+                          child: Image.network(
+                            "https://image.tmdb.org/t/p/w500${movie.backdropPath}",
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => DetailScreen(movie: movie),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        } else if (state is TopRatedMoviesError) {
+          return Center(
+            child: Text(
+              state.errorMessage,
+              style: TextStyle(color: Colors.red),
+            ),
+          );
+        } else {
+          return Container();
+        }
+      },
     );
   }
 }
