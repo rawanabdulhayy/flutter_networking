@@ -14,6 +14,5 @@ class FetchMovieDetails extends MovieDetailsEvent{
   final int movieId;
   const FetchMovieDetails(this.movieId);
   @override
-  // TODO: implement props
   List<Object> get props => [movieId];
 }

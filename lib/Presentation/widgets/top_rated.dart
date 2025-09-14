@@ -105,7 +105,8 @@ class TopRated extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder:
-                                    (context) => DetailScreen(movie: movie),
+                                    // (context) => DetailScreen(movie: movie),
+                                    (context) => DetailScreen(movieId: movie.id,),
                               ),
                             );
                           },

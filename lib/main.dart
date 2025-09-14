@@ -22,3 +22,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+//1- checking navigation + passed arguments
+//2- checking bloc files + provider + builder
+//3- going over the models and comparing the approaches for the toJson and fromJson AND the MOVIES class construction.

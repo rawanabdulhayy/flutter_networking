@@ -1,11 +1,16 @@
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:networking/Presentation/screens/detail_screen.dart';
+import 'package:networking/logic/details/movie_details_bloc.dart';
+import 'package:networking/logic/details/movie_details_event.dart';
 import 'package:networking/logic/now_playing/now_playing_bloc.dart';
 import 'package:networking/logic/now_playing/now_playing_state.dart';
 
 class NowPlayingWidget extends StatelessWidget {
   const NowPlayingWidget({super.key});
+
   // final List<String> moviesImages = const [
   //   "https://www.themoviedb.org/t/p/w1280/xbSuFiJbbBWCkyCCKIMfuDCA4yV.jpg",
   //   "https://www.themoviedb.org/t/p/w1280/8XfIKOPmuCZLh5ooK13SPKeybWF.jpg",
@@ -30,58 +35,57 @@ class NowPlayingWidget extends StatelessWidget {
             //we are sending the movie response along with the state
             //so we retrieve the data from the state
             items:
-                movies.map((movie) {
-                  return GestureDetector(
-                    onTap: (){
-                      //hnru7 details screen w hn wrap details screen into a bloc provider
-                      Navigator.push(context, MaterialPageRoute(builder: (_){
+            movies.map((movie) {
+              return GestureDetector(
+                onTap: (){
+                  Navigator.push(context, MaterialPageRoute(builder: (_){
+                    return DetailScreen(movieId: movie.id);
+                  }));
+                },
+                child: Stack(
+                  children: [
+                    Image.network(
+                      "https://image.tmdb.org/t/p/w500${movie.backdropPath}",
+                      width: double.infinity,
+                      height: double.infinity,
+                      //contain: eltabe3y — it stays true to its original shape, nothing cut off.
+                      //cover: kulaha — container is fully filled, but you might lose edges.
+                      //height and width only fits those w mesh muhem l tani fit
+                      //fill: Force fit — no empty space, no cropping, but shape may look weird.
 
-                      }));
-                    },
-                    child: Stack(
-                      children: [
-                        Image.network(
-                          "https://image.tmdb.org/t/p/w500${movie.backdropPath}",
-                          width: double.infinity,
-                          height: double.infinity,
-                          //contain: eltabe3y — it stays true to its original shape, nothing cut off.
-                          //cover: kulaha — container is fully filled, but you might lose edges.
-                          //height and width only fits those w mesh muhem l tani fit
-                          //fill: Force fit — no empty space, no cropping, but shape may look weird.
-
-                          // cover → keeps original proportions (aspect ratio) → crops edges if needed.
-                          // fill → ignores proportions → stretches/squishes image to fit container.
-                          fit: BoxFit.fill,
-                        ),
-                        //where the child of the positioned widget should be positioned within the stack relatively.
-                        Positioned(
-                          top: 324,
-                          left: 120,
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 15,
-                                height: 15,
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              Text(
-                                "NOW PLAYING",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w300,
-                                  fontSize: 24,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                      // cover → keeps original proportions (aspect ratio) → crops edges if needed.
+                      // fill → ignores proportions → stretches/squishes image to fit container.
+                      fit: BoxFit.fill,
                     ),
-                  );
-                }).toList(),
+                    //where the child of the positioned widget should be positioned within the stack relatively.
+                    Positioned(
+                      top: 324,
+                      left: 120,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 15,
+                            height: 15,
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          Text(
+                            "NOW PLAYING",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w300,
+                              fontSize: 24,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
             options: CarouselOptions(
               height: 370,
               autoPlay: true,
