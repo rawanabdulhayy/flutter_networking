@@ -243,13 +243,14 @@ class DetailScreen extends StatelessWidget {
                             if (state is RelatedMoviesLoading) {
                               return Center(child: CircularProgressIndicator());
                             } else if (state is RelatedMoviesLoaded) {
+                              // state.movies is of type Movies, not List<Movie>.
+                              // That’s why .length is not defined.
+                              // so we need the actual list inside the Movies class, reflecting the movies list.
                               final relatedMovies = state.movies.moviesResults;
 
                               return ListView.builder(
                                 scrollDirection: Axis.horizontal,
                                 itemCount: relatedMovies.length,
-                                //     So state.movies is of type Movies, not List<Movie>.
-                                // That’s why .length is not defined.
                                 itemBuilder: (context, index) {
                                   final movie = relatedMovies[index];
                                   return _buildRelatedMovie(

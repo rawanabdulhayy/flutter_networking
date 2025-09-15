@@ -1,0 +1,181 @@
+//-------What would have happened have we not have made the Movies class-------
+// final List<Movie> movies = (response.data['results'] as List)
+//     .map((json) => Movie.fromJson(json))
+//     .toList();
+
+// response.data is a Map<String, dynamic>, not a Movies.
+// which is why we need a converter method; fromJson that takes the map and converts it into the class type.
+// final movies = Movies.fromJson(response.data);
+
+import 'package:dio/dio.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:networking/logic/related_movies/related_movies_event.dart';
+import 'package:networking/logic/related_movies/related_movies_state.dart';
+import '../../models/movie.dart';
+
+/*
+  High-level responsibility of this bloc:
+  - Accept a FetchRelatedMovies event that contains a list of genre IDs.
+  - Call the TMDB "discover" endpoint with those genre ids to retrieve movies
+    that match any of the provided genres.
+  - Parse the response into model objects (Movies / List<Movie>).
+  - Emit states that the UI can react to: loading, loaded (with data), or error.
+
+  Design & reasoning (approach):
+  1. Keep this bloc focused on *one* piece of functionality: fetching related movies.
+     Do not mix UI logic or details-fetching logic here.
+  2. Use dependency injection for the HTTP client (Dio) so we can easily mock it in tests
+     and swap implementations if needed.
+  3. Emit a loading state immediately when the request starts so the UI can show a spinner.
+  4. Parse the response centrally (using Movies.fromJson) to avoid repeating parsing code.
+  5. Emit an error state with a *friendly* message (see notes below on improving errors).
+  6. Consider edge-cases (no results, network failures, API rate limits) and caching.
+*/
+
+class RelatedMoviesBloc extends Bloc<RelatedMoviesEvent, RelatedMoviesState> {
+  // We accept a Dio instance from the outside (DI). This makes the bloc testable and
+  // decouples it from concrete network configuration. In production you can provide
+  // a pre-configured Dio (interceptors, timeouts, baseUrl, auth, etc.).
+  final Dio dio;
+
+  // Constructor: provide the dio instance and set the initial state.
+  RelatedMoviesBloc(this.dio) : super(RelatedMoviesInitial()) {
+
+    // Register an event handler for FetchRelatedMovies. The 'on' API is the recommended
+    // way (since bloc 7+). We keep the handler async because we'll perform network I/O.
+    on<FetchRelatedMovies>((event, emit) async {
+      // 1) Tell UI we're loading — this should make the related-movies section show a
+      //    CircularProgressIndicator (or a skeleton) while we fetch data.
+      emit(RelatedMoviesLoading());
+
+      try {
+        // 2) TMDB expects a comma-separated list of genre IDs for the `with_genres` query.
+        //    Example: with_genres=28,12 (Action, Adventure). Joining into a string is
+        //    the simplest way to pass multiple ids in one parameter.
+        final genreQuery = event.genreIds.join(",");
+
+        // 3) Make the HTTP GET request. Note:
+        //    - We put api_key here for simplicity, but **do not commit API keys** to your
+        //      public repo. Use environment variables, build-time secrets, or a secure
+        //      config. Alternatively pass apiKey via constructor or use an Authorization
+        //      interceptor.
+        //    - Consider adding other query params if you want (language, sort_by, page,
+        //      include_adult=false, etc.).
+        final response = await dio.get(
+          "https://api.themoviedb.org/3/discover/movie",
+          queryParameters: {
+            // TODO: move API key out of source.
+            "api_key": "87903828b97a85b50c60fb3bbd960c55",
+            "with_genres": genreQuery,
+            // optionally: "sort_by": "popularity.desc",
+            // optionally: "include_adult": false,
+            // optionally: "page": 1,
+          },
+        );
+
+        // 4) The response body for TMDB discover is usually a Map with keys like
+        //    {"page":1, "results": [...], "total_results":X, "total_pages":Y}
+        //    response.data is therefore a Map<String, dynamic> and we need to convert it
+        //    into our domain model(s).
+
+        // ------- two equivalent parsing approaches -------
+        // Approach A (recommended): use a wrapper Movies model with a fromJson factory.
+        // final Movies movies = Movies.fromJson(response.data);
+        // emit(RelatedMoviesLoaded(movies.moviesResults)); // emit the List<Movie>
+
+        // Approach B (what this project currently uses): construct Movies and emit it.
+        // This will make the UI receive a Movies object; the UI must then access
+        // state.movies.moviesResults to get the list. Both approaches work — choose the
+        // one that matches your app's conventions.
+
+        final movies = Movies.fromJson(response.data);
+
+        // 5) Emit the loaded state containing the parsed data. Right now we emit the
+        //    Movies wrapper object as the state payload. If you'd rather keep state
+        //    simpler for the UI, change RelatedMoviesLoaded to hold List<Movie> and
+        //    emit RelatedMoviesLoaded(movies.moviesResults).
+        emit(RelatedMoviesLoaded(movies));
+
+        // 6) (Optional) Additional considerations after a successful fetch:
+        //    - Cache results (in-memory or persistent) keyed by the comma-joined genre ids.
+        //    - If the API returns zero results, you may want to emit a specific empty state
+        //      (e.g. RelatedMoviesEmpty) so the UI can show a "No related movies" message
+        //      instead of an empty list.
+      } catch (e) {
+        // 7) Error handling. Right now we simply convert the exception to a string and
+        //    emit RelatedMoviesError. In practice you should:
+        //    - Detect DioError and look at `error.type` to differentiate timeout,
+        //      response (bad status code), cancellation, etc.
+        //    - Provide friendly messages for the UI (e.g. "Check your internet
+        //      connection" instead of raw stack traces).
+        //    - Consider retry logic for transient errors, or backoff when rate-limited.
+        emit(RelatedMoviesError(e.toString()));
+      }
+    });
+  }
+}
+
+/*
+  Additional notes & best practices (summary):
+
+  1) Separation of concerns (recommended refactor):
+     - Move network & parsing logic into a repository class (RelatedMoviesRepository).
+       The bloc then becomes a thin orchestration layer that calls repository.fetch(...)
+       and maps results to states. This improves testability and reusability.
+
+       Example repository signature:
+         class RelatedMoviesRepository {
+           final Dio dio;
+           RelatedMoviesRepository(this.dio);
+           Future<List<Movie>> fetchRelatedMoviesByGenres(List<int> genreIds) async { ... }
+         }
+
+       Then the bloc's constructor becomes:
+         RelatedMoviesBloc(this._repo) : super(...)
+
+  2) Testing:
+     - Inject a mocked Dio (or a mocked repository) and assert the sequence of states
+       emitted when you add FetchRelatedMovies.
+     - Use `bloc_test` package for concise tests.
+
+  3) UI usage pattern (where to dispatch):
+     - Do NOT try to fetch related movies in NowPlayingWidget — the now-playing items
+       usually don't include genre ids.
+     - Fetch related movies inside DetailScreen *after* MovieDetailsBloc loads the
+       movie details (because only then you have the genre ids).
+     - Example usage in DetailScreen (pseudo):
+
+       if (movieDetailsLoaded) {
+         final genreIds = movieDetails.genres.map((g) => g.id).toList();
+         // Provide the bloc and immediately request related movies:
+         BlocProvider(
+           create: (_) => RelatedMoviesBloc(dio) .. add(FetchRelatedMovies(genreIds)),
+           child: RelatedMoviesWidget(),
+         );
+       }
+
+  4) Performance & UX:
+     - Consider paging if you expect many results. The discover endpoint supports `page`.
+     - Consider cancelling in-flight requests when the user navigates away. Dio supports
+       cancel tokens for this.
+     - Deduplicate repeated identical requests (same genre combination) by caching.
+
+  5) Security & configuration:
+     - Move the API key out of source code. Use compile-time env variables, secret manager
+       or a server-side proxy if you don't want the key shipped in the app binary.
+
+  6) Error messages & localization:
+     - Convert technical errors into localized user-facing messages before emitting states
+       consumed by the UI (e.g. "Unable to load related movies. Please try again.").
+
+  7) Alternative UX pattern:
+     - Instead of a separate RelatedMoviesBloc, you could add a `related` field to the
+       MovieDetails state and fetch them inside the MovieDetailsBloc after details are
+       loaded. This reduces the number of blocs but also increases the responsibility of
+       MovieDetailsBloc. Choose based on team preference and complexity.
+
+  TL;DR: This bloc is a thin orchestration layer. Keep network details in a repository,
+  secure your API keys, handle errors gracefully, and emit simple payloads that the UI
+  can consume easily (prefer List<Movie> over wrapper objects when possible).
+*/
+
